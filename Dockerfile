@@ -7,6 +7,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+COPY requirements.txt ./
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements.txt
+
 COPY pyproject.toml README.md LICENSE ./
 COPY app ./app
 COPY ui ./ui
@@ -14,7 +19,7 @@ COPY scripts ./scripts
 COPY data ./data
 COPY style.css app.py ./
 
-RUN pip install --no-cache-dir . \
+RUN pip install --no-cache-dir --no-deps . \
     && python -m scripts.init_database \
     && python -m scripts.build_index --provider hash \
     && groupadd --gid 10001 appuser \

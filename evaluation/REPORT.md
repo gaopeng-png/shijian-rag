@@ -13,8 +13,8 @@
 | citation_coverage | 1.0 |
 | fact_support_rate | 1.0 |
 | refusal_accuracy | 1.0 |
-| retrieval_p50_ms | 0.576 |
-| retrieval_p95_ms | 5.535 |
+| retrieval_p50_ms | 0.788 |
+| retrieval_p95_ms | 7.129 |
 | failed_cases | 0 |
 | baseline_hit_at_5 | 0.9968 |
 | baseline_mrr_at_5 | 0.9895 |

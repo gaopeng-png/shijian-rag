@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from chromadb.config import Settings as ChromaSettings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
@@ -44,6 +45,7 @@ def sync_vector_index(
         persist_directory=str(settings.chroma_dir),
         embedding_function=create_embeddings(settings, selected),
         collection_metadata={"hnsw:space": "cosine"},
+        client_settings=ChromaSettings(anonymized_telemetry=False),
     )
 
     desired: dict[str, tuple[Document, str]] = {}
@@ -125,6 +127,7 @@ class VectorIndex:
                 collection_name=settings.effective_collection,
                 persist_directory=str(settings.chroma_dir),
                 embedding_function=create_embeddings(settings),
+                client_settings=ChromaSettings(anonymized_telemetry=False),
             )
             probe = self.store.get(limit=1, include=[])
             if not probe.get("ids"):
