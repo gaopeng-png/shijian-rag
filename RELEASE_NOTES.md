@@ -1,25 +1,21 @@
-# v1.0.0 Release Notes
+# v1.0.1 Release Notes
 
-## 主要功能
+## 安全更新
 
-- 将 100 条事件和 8 条学习资料迁移到可审查 JSONL 数据源。
-- 新增稳定事件 ID、内容哈希、SQLite UPSERT 和 FTS5 索引。
-- 新增离线/Qwen Embedding、Chroma 增量索引与加权 RRF 混合检索。
-- 新增事件级引用、无证据拒答、Qwen 故障降级和结构化日志。
-- 新增 FastAPI `/api/v1/qa`、带状态码语义的 `/healthz` 与 Gradio 演示界面。
-- 新增 321 条评测、Pytest、Docker、GitHub Actions 和密钥扫描。
-- Docker 使用固定 UID `10001` 的非 root 用户运行，CI 启用最小权限与超时保护。
+- 将 Chroma 调整为不受 `CVE-2026-45829` 影响的 `0.6.3`，并同步使用兼容的 `langchain-chroma 0.2.3`。
+- 将 `python-dotenv` 升级至 `1.2.2`、Pytest 升级至 `9.0.3`，修复 Dependabot 报告的安全问题。
+- 关闭 Chroma 匿名遥测并固定兼容的 `posthog 5.4.0`，避免离线运行产生遥测请求或告警。
+- 优化 Docker 依赖缓存层，应用代码或文档变更不再重复安装全部 Python 依赖。
 
 ## 验证结果
 
 - 12 项自动化测试通过。
 - 离线评测 Hit@5 100%，MRR@5 99.84%，拒答准确率 100%。
-- 本机本地检索 P95 5.54 ms。
-- Docker 镜像 `shijian-rag:latest` 构建成功，容器健康检查与真实 `/api/v1/qa` 冒烟测试通过。
+- 本机本地检索 P95 7.13 ms。
+- Docker 容器以 UID `10001` 非 root 用户运行；健康检查、精确查询、事件引用、无答案拒答和无模型降级均通过。
+- 容器内依赖版本复核通过，运行日志未出现遥测发送错误。
 
-## 发布前清单
+## 兼容性说明
 
-- 在 GitHub 仓库 Settings 中启用 Secret scanning 与 Dependabot。
-- 上传演示 GIF/视频并把在线地址添加到仓库 About 和 README。
-- 确认事件数据具备公开再分发权。
-- 创建 `v1.0.0` tag，并把本文件内容粘贴到 GitHub Release。
+- API 响应结构、SQLite 数据、Chroma 集合内容和启动命令保持不变。
+- 本版本替代 `v1.0.0`，建议公开部署使用 `v1.0.1` 或更新版本。
