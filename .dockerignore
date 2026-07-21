@@ -1,0 +1,11 @@
+.git
+.github
+.env
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+storage
+chroma_history_db
+history_events.db
+docs/screenshots
