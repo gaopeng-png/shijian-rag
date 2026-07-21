@@ -1,0 +1,8 @@
+{"id": "knowledge-history-answer-template", "source_title": "史鉴 RAG 项目内置学习方法资料", "source_url": "", "text": "回答历史事件可按时间、地点、人物、背景、经过、结果、影响、启示来组织。学生考试作答时尤其要写清原因和影响。", "title": "历史事件答题模板"}
+{"id": "knowledge-cause-chain", "source_title": "史鉴 RAG 项目内置学习方法资料", "source_url": "", "text": "把历史事件记成一条因果链: 背景矛盾积累 -> 导火索出现 -> 事件爆发 -> 结果产生 -> 长期影响。适合记鸦片战争、法国大革命、一战等。", "title": "因果链记忆法"}
+{"id": "knowledge-number-memory", "source_title": "史鉴 RAG 项目内置学习方法资料", "source_url": "", "text": "年份可以用谐音、画面和数字形状辅助记忆。例如1919可记为一群青年一喊一救国，1789可记为一起把旧堡掀开。", "title": "年份谐音与数字联想"}
+{"id": "knowledge-visual-memory", "source_title": "史鉴 RAG 项目内置学习方法资料", "source_url": "", "text": "把抽象事件变成一张画面: 赤壁之战想象江面火船，工业革命想象蒸汽机喷白烟，五四运动想象学生举旗走上街头。", "title": "画面记忆法"}
+{"id": "knowledge-compare-memory", "source_title": "史鉴 RAG 项目内置学习方法资料", "source_url": "", "text": "容易混淆的事件可以对比记忆: 辛亥革命推翻君主专制但未完成反帝反封建任务；五四运动标志新民主主义革命开端。", "title": "对比记忆法"}
+{"id": "knowledge-exam-keywords", "source_title": "史鉴 RAG 项目内置学习方法资料", "source_url": "", "text": "背历史不只背故事，还要背关键词。每个事件至少记住年份、人物、性质、直接结果和历史影响，这些往往是考试采分点。", "title": "考试关键词法"}
+{"id": "knowledge-china-modern-line", "source_title": "史鉴 RAG 项目内置学习方法资料", "source_url": "", "text": "中国近代史可抓住屈辱与抗争、探索与救亡、革命与建国三条线索。鸦片战争是近代史开端，五四运动是新民主主义革命开端，1949年新中国成立开辟新纪元。", "title": "中国近代史主线"}
+{"id": "knowledge-world-modern-line", "source_title": "史鉴 RAG 项目内置学习方法资料", "source_url": "", "text": "世界近代史可抓住思想解放、制度变革、工业化和全球联系。文艺复兴解放思想，法国大革命冲击封建制度，工业革命改变生产方式。", "title": "世界近代史主线"}
