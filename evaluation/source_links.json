@@ -1,0 +1,164 @@
+{
+  "summary": {
+    "passed": 17,
+    "manual_review": 3,
+    "unreachable": 2,
+    "failed": 0
+  },
+  "results": [
+    {
+      "source_id": "pep-china-ancient",
+      "url": "https://www.pep.com.cn/products/jc/czjks/201510/t20151026_1250699.shtml",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "pep-china-modern",
+      "url": "https://www.pep.com.cn/kcs/yjcg/lw/lw2017/201811/t20181113_1933284.html",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "pep-world-history",
+      "url": "https://bp.pep.com.cn/2018qiu/czls2018/",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "npc-early-china",
+      "url": "https://www.npc.gov.cn/npc/c2/c30834/202309/t20230901_431407.html",
+      "state": "unreachable",
+      "status_code": null,
+      "detail": "[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1028)"
+    },
+    {
+      "source_id": "gov-china-modern",
+      "url": "https://www.locpg.gov.cn/zggq/2014-01/04/c_125956421.htm",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "mfa-hong-kong-history",
+      "url": "https://www.mfa.gov.cn/ziliao_674904/wjs_674919/200011/t20001107_7950073.shtml",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "beijing-xinhai-110",
+      "url": "https://www.beijing.gov.cn/ywdt/zyldhd/202110/t20211010_2509326.html",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "martyrs-may-fourth",
+      "url": "https://www.chinamartyrs.gov.cn/wusi/wusiyundongjianjie/202404/t20240424_414845.html",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "miit-cpc-founded",
+      "url": "https://www.miit.gov.cn/ztzl/rdzt/dsxxjyzl/xxzl/art/2021/art_c8df6017406d44899aae3bbf18bb115a.html",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "nanjing-archives-massacre",
+      "url": "https://dag.nanjing.gov.cn/daggk/gzjs/",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "mod-war-victory",
+      "url": "https://www.mod.gov.cn/gfbw/gfjy_index/js_214151/4856045.html",
+      "state": "unreachable",
+      "status_code": null,
+      "detail": "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.mod.gov.cn'. (_ssl.c:1028)"
+    },
+    {
+      "source_id": "gov-china-modern-era",
+      "url": "https://www.locpg.gov.cn/zggq/2014-01/04/c_125956423.htm",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "stats-reform-opening",
+      "url": "https://www.stats.gov.cn/zt_18555/ztfx/jnggkf30n/202303/t20230301_1920460.html",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "met-renaissance",
+      "url": "https://www.metmuseum.org/met-publications/the-metropolitan-museum-of-art-vol-4-the-renaissance-in-italy-and-spain",
+      "state": "manual_review",
+      "status_code": 429,
+      "detail": "website denied automated access"
+    },
+    {
+      "source_id": "loc-columbus-1492",
+      "url": "https://www.loc.gov/exhibits/exploring-the-early-americas/columbus-and-the-taino.html",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "britannica-french-revolution",
+      "url": "https://www.britannica.com/event/French-Revolution",
+      "state": "manual_review",
+      "status_code": 403,
+      "detail": "website denied automated access"
+    },
+    {
+      "source_id": "science-museum-industrial-revolution",
+      "url": "https://www.sciencemuseum.org.uk/objects-and-stories/health-safety-and-welfare-work",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "nara-declaration",
+      "url": "https://www.archives.gov/founding-docs/declaration",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "iwm-ww1-outbreak",
+      "url": "https://www.iwm.org.uk/history/how-the-world-went-to-war-in-1914",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "iwm-ww2-ended",
+      "url": "https://www.iwm.org.uk/history/1945-a-momentous-year",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    },
+    {
+      "source_id": "loc-russian-revolution",
+      "url": "https://www.loc.gov/item/17023073/",
+      "state": "manual_review",
+      "status_code": 403,
+      "detail": "website denied automated access"
+    },
+    {
+      "source_id": "un-founding-history",
+      "url": "https://www.un.org/en/about-us/history-of-the-un",
+      "state": "passed",
+      "status_code": 200,
+      "detail": ""
+    }
+  ]
+}
