@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 
-from openai import OpenAI
+from openai import APITimeoutError, OpenAI, RateLimitError
 
 from app.config import Settings
 from app.models import ChatMessage, QueryIntent, SearchHit
@@ -96,6 +96,7 @@ class AnswerGenerator:
         intent: QueryIntent,
         hits: list[SearchHit],
         history: list[ChatMessage],
+        force_local_reason: str | None = None,
     ) -> GenerationResult:
         started = time.perf_counter()
         if not hits:
@@ -103,6 +104,12 @@ class AnswerGenerator:
                 answer=local_answer(question, intent, hits),
                 latency_ms=(time.perf_counter() - started) * 1000,
                 error="no_retrieval_evidence",
+            )
+        if force_local_reason:
+            return GenerationResult(
+                answer=local_answer(question, intent, hits),
+                latency_ms=(time.perf_counter() - started) * 1000,
+                error=force_local_reason,
             )
         if not self.configured:
             reason = "llm_disabled" if not self.settings.use_llm else "api_key_missing"
@@ -127,14 +134,14 @@ class AnswerGenerator:
             client = OpenAI(
                 api_key=self.settings.qwen_api_key,
                 base_url=self.settings.qwen_base_url,
-                timeout=45.0,
+                timeout=self.settings.llm_timeout_seconds,
                 max_retries=1,
             )
             response = client.chat.completions.create(
                 model=self.settings.qwen_model,
                 messages=messages,  # type: ignore[arg-type]
                 temperature=0.2,
-                max_tokens=900,
+                max_tokens=self.settings.llm_max_tokens,
             )
             answer = response.choices[0].message.content or ""
             if not any(f"[E{index}]" in answer for index in range(1, len(hits) + 1)):
@@ -147,9 +154,14 @@ class AnswerGenerator:
                 latency_ms=(time.perf_counter() - started) * 1000,
                 token_usage=usage,
             )
+        except APITimeoutError:
+            error = "model_timeout"
+        except RateLimitError:
+            error = "model_rate_limited"
         except Exception as exc:
-            return GenerationResult(
-                answer=local_answer(question, intent, hits),
-                latency_ms=(time.perf_counter() - started) * 1000,
-                error=f"model_error:{type(exc).__name__}",
-            )
+            error = f"model_error:{type(exc).__name__}"
+        return GenerationResult(
+            answer=local_answer(question, intent, hits),
+            latency_ms=(time.perf_counter() - started) * 1000,
+            error=error,
+        )

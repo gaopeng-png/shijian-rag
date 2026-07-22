@@ -7,6 +7,7 @@ import gradio as gr
 import pandas as pd
 
 from app.config import Settings
+from app.demo_guard import HardRateLimitError
 from app.models import ChatMessage, QARequest
 from app.service import QAService
 
@@ -29,11 +30,17 @@ def _citation_markdown(response: Any) -> str:
         return response.answer
     sources = ["\n\n---\n**资料来源**"]
     for citation in response.citations:
-        link = f"（{citation.source_url}）" if citation.source_url else ""
-        sources.append(
-            f"- [{citation.ref}] {citation.name} · {citation.year_text} · "
-            f"{citation.source_title}{link}"
-        )
+        sources.append(f"- [{citation.ref}] {citation.name} · {citation.year_text}")
+        if citation.sources:
+            for item in citation.sources:
+                fields = "、".join(item.supported_fields) or "事件资料"
+                sources.append(
+                    f"  - [{item.title}]({item.url}) · {item.publisher} · "
+                    f"{item.authority_level}级 · 支持字段：{fields}"
+                )
+        else:
+            link = f"（{citation.source_url}）" if citation.source_url else ""
+            sources.append(f"  - {citation.source_title}{link}")
     sources.append(
         f"\n`检索: {response.retrieval_mode}` · `耗时: {response.latency_ms:.1f} ms`"
         + (" · `本地降级回答`" if response.degraded else "")
@@ -41,10 +48,18 @@ def _citation_markdown(response: Any) -> str:
     return response.answer + "\n".join(sources)
 
 
-def build_demo(settings: Settings | None = None) -> gr.Blocks:
+def build_demo(
+    settings: Settings | None = None,
+    service: QAService | None = None,
+) -> gr.Blocks:
     resolved = settings or Settings.from_env()
-    service = QAService(resolved)
-    def chat(message: str, history: list[dict[str, str]] | None):
+    qa_service = service or QAService(resolved)
+
+    def chat(
+        message: str,
+        history: list[dict[str, str]] | None,
+        request: gr.Request,
+    ):
         history = history or []
         if not message.strip():
             return history, ""
@@ -53,7 +68,18 @@ def build_demo(settings: Settings | None = None) -> gr.Blocks:
             for item in history[-8:]
             if item.get("role") in {"user", "assistant"}
         ]
-        response = service.answer(QARequest(question=message, history=conversation))
+        client_identifier = request.client.host if request and request.client else "unknown"
+        try:
+            response = qa_service.answer(
+                QARequest(question=message, history=conversation),
+                client_identifier,
+            )
+        except HardRateLimitError:
+            return [
+                *history,
+                {"role": "user", "content": message},
+                {"role": "assistant", "content": "请求过于频繁，请约一分钟后再试。"},
+            ], ""
         return [
             *history,
             {"role": "user", "content": message},
@@ -61,7 +87,7 @@ def build_demo(settings: Settings | None = None) -> gr.Blocks:
         ], ""
 
     def status_text() -> str:
-        health = service.health()
+        health = qa_service.health()
         return (
             "### 系统状态\n\n"
             f"- 状态：`{health.status}`\n"
@@ -72,7 +98,7 @@ def build_demo(settings: Settings | None = None) -> gr.Blocks:
             f"- 说明：{health.detail or '所有核心服务正常'}"
         )
 
-    events = service.repository.list_events() if service.repository.ready else []
+    events = qa_service.repository.list_events() if qa_service.repository.ready else []
     table = pd.DataFrame(
         [
             {

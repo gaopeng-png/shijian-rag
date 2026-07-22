@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shijian-rag"
-version = "1.0.1"
+version = "1.1.0.dev0"
 description = "A traceable hybrid-RAG question answering system for history learning"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
@@ -37,6 +37,7 @@ shijian-ui = "ui.gradio_app:main"
 shijian-init = "scripts.init_database:main"
 shijian-index = "scripts.build_index:main"
 shijian-eval = "scripts.run_evaluation:main"
+shijian-serve = "scripts.serve:main"
 
 [tool.setuptools.packages.find]
 include = ["app*", "ui*", "scripts*"]

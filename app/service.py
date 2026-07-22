@@ -4,13 +4,16 @@ import logging
 import time
 import uuid
 
+from app import __version__
 from app.config import Settings
 from app.database import EventRepository
+from app.demo_guard import DemoGuard
 from app.generation import AnswerGenerator
 from app.logging_config import configure_logging
 from app.models import (
     Citation,
     HealthResponse,
+    MetaResponse,
     QARequest,
     QAResponse,
     RetrievedEvent,
@@ -33,6 +36,7 @@ class QAService:
             limit=settings.retrieval_limit,
         )
         self.generator = AnswerGenerator(settings)
+        self.demo_guard = DemoGuard(settings)
 
     def health(self) -> HealthResponse:
         database_ready = self.repository.ready
@@ -63,6 +67,19 @@ class QAService:
             detail=detail,
         )
 
+    def ready(self) -> bool:
+        return self.repository.ready and self.vector_index.ready
+
+    def meta(self) -> MetaResponse:
+        return MetaResponse(
+            version=__version__,
+            event_count=self.repository.count(),
+            verified_event_count=self.repository.verified_event_count(),
+            source_count=self.repository.source_count(),
+            evidence_revision=self.repository.evidence_revision(),
+            model_mode="qwen" if self.generator.configured else "local_fallback",
+        )
+
     @staticmethod
     def _retrieval_question(request: QARequest) -> str:
         question = request.question.strip()
@@ -73,18 +90,35 @@ class QAService:
                 return f"{previous_users[-1]}；追问：{question}"
         return question
 
-    def answer(self, request: QARequest) -> QAResponse:
+    def answer(self, request: QARequest, client_identifier: str = "local") -> QAResponse:
         if not self.repository.ready:
             raise FileNotFoundError(
                 f"database not found: {self.settings.db_path}; run python -m scripts.init_database"
             )
         started = time.perf_counter()
         trace_id = uuid.uuid4().hex
+        client_hash = self.demo_guard.register_request(client_identifier)
         retrieval_question = self._retrieval_question(request)
         retrieval = self.retriever.retrieve(retrieval_question)
-        generation = self.generator.generate(
-            request.question.strip(), retrieval.intent, retrieval.hits, request.history
-        )
+        lease = None
+        force_local_reason = None
+        if retrieval.hits and self.generator.configured:
+            lease = self.demo_guard.begin_model_call(client_hash)
+            force_local_reason = lease.reason
+        generation = None
+        try:
+            generation = self.generator.generate(
+                request.question.strip(),
+                retrieval.intent,
+                retrieval.hits,
+                request.history,
+                force_local_reason=force_local_reason,
+            )
+        finally:
+            if lease is not None:
+                lease.complete(generation.token_usage if generation else 0)
+        if generation is None:
+            raise RuntimeError("answer generation did not return a result")
 
         citations = [
             Citation(
@@ -96,6 +130,7 @@ class QAService:
                 source_title=hit.event.source_title,
                 source_url=hit.event.source_url,
                 excerpt=hit.event.summary,
+                sources=hit.event.sources,
             )
             for index, hit in enumerate(retrieval.hits, start=1)
         ]
@@ -124,6 +159,7 @@ class QAService:
             generation_ms=round(generation.latency_ms, 3),
             token_usage=generation.token_usage,
             degraded=degraded,
+            degraded_reason=generation.error or None,
             refused=refused,
         )
         LOGGER.info(
@@ -139,6 +175,7 @@ class QAService:
                 "refused": refused,
                 "token_usage": generation.token_usage,
                 "fallback_reason": generation.error or None,
+                "client_hash": client_hash,
             },
         )
         return response
