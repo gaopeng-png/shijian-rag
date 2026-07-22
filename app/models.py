@@ -5,6 +5,20 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class SourceCitation(BaseModel):
+    source_id: str
+    title: str
+    publisher: str
+    url: str
+    source_type: str
+    authority_level: Literal["A", "B", "C"]
+    language: str = "zh-CN"
+    accessed_at: str
+    license_note: str = "仅引用来源元数据，不转载受版权保护的正文"
+    locator: str = ""
+    supported_fields: list[str] = Field(default_factory=list)
+
+
 class Event(BaseModel):
     id: str
     name: str
@@ -22,6 +36,13 @@ class Event(BaseModel):
     source_title: str = "史鉴 RAG 项目内置历史事件资料"
     source_url: str = ""
     content_hash: str = ""
+    sources: list[SourceCitation] = Field(default_factory=list)
+    claim_sources: dict[str, list[str]] = Field(default_factory=dict)
+    evidence_status: str = "unreviewed"
+    reviewer_id: str = ""
+    reviewed_at: str = ""
+    evidence_notes: str = ""
+    memory_tip_provenance: Literal["project_original"] = "project_original"
 
     @property
     def year_text(self) -> str:
@@ -73,6 +94,7 @@ class Citation(BaseModel):
     source_title: str
     source_url: str = ""
     excerpt: str
+    sources: list[SourceCitation] = Field(default_factory=list)
 
 
 class RetrievedEvent(BaseModel):
@@ -105,6 +127,7 @@ class QAResponse(BaseModel):
     generation_ms: float
     token_usage: int = 0
     degraded: bool = False
+    degraded_reason: str | None = None
     refused: bool = False
 
 
@@ -117,3 +140,12 @@ class HealthResponse(BaseModel):
     llm_enabled: bool
     llm_configured: bool
     detail: str = ""
+
+
+class MetaResponse(BaseModel):
+    version: str
+    event_count: int
+    verified_event_count: int
+    source_count: int
+    evidence_revision: str
+    model_mode: Literal["qwen", "local_fallback"]

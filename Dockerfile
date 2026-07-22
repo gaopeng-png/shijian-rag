@@ -3,7 +3,8 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     USE_LLM=false \
-    EMBEDDING_PROVIDER=hash
+    EMBEDDING_PROVIDER=hash \
+    PORT=7860
 
 WORKDIR /app
 
@@ -22,15 +23,15 @@ COPY style.css app.py ./
 RUN pip install --no-cache-dir --no-deps . \
     && python -m scripts.init_database \
     && python -m scripts.build_index --provider hash \
-    && groupadd --gid 10001 appuser \
-    && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin appuser \
+    && groupadd --gid 1000 appuser \
+    && useradd --uid 1000 --gid 1000 --no-create-home --shell /usr/sbin/nologin appuser \
     && chown -R appuser:appuser /app/storage
 
 USER appuser
 
-EXPOSE 8000
+EXPOSE 7860
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"
+  CMD python -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.getenv('PORT', '7860') + '/readyz', timeout=3)"
 
-CMD ["uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "scripts.serve"]

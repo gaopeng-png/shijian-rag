@@ -1,0 +1,29 @@
+name: source-links
+
+on:
+  schedule:
+    - cron: "17 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install --no-deps -e .
+      - name: Check links
+        run: python -m scripts.check_source_links --strict
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: source-link-report
+          path: evaluation/source_links.json
+          retention-days: 30

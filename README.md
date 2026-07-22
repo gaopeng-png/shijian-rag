@@ -1,12 +1,22 @@
+---
+title: 史鉴 RAG
+emoji: 📚
+colorFrom: red
+colorTo: yellow
+sdk: docker
+app_port: 7860
+license: mit
+---
+
 # 史鉴 RAG
 
-面向历史学习的可溯源智能问答系统。项目使用 SQLite FTS5、Chroma 与 RRF 构建混合检索链路，通过 Qwen 生成回答；没有 API Key 或模型调用失败时，会根据检索证据生成本地回答，而不是使用模型记忆补全事实。
+面向历史学习的可溯源智能问答系统。项目使用 FastAPI、Gradio、SQLite FTS5、Chroma、RRF 与 Qwen 构建混合检索链路；模型不可用时自动返回带引用的本地证据回答。
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-> 当前包含 100 条结构化历史事件和 8 条历史学习方法资料。数据为项目整理的教学演示资料，不应替代教材、论文或权威史料。
+> 数据集包含 100 条项目整理的教学事件。`memory_tip` 是项目原创记忆方法，不是史料结论。来源目录当前是自动建立的候选映射，须由人工逐字段核对后才计为“已审核”；本项目不能替代教材、论文或权威史料。
 
 <p align="center">
   <img src="docs/screenshots/shijian-rag-demo.png" width="49%" alt="史鉴 RAG 可溯源问答演示">
@@ -15,52 +25,66 @@
 
 [查看 14 秒问答与拒答演示视频](docs/shijian-rag-demo.webm)
 
-## 项目亮点
+## 在线演示状态
 
-- **混合检索**：年份/事件名精确匹配、人物过滤、SQLite FTS5、LIKE 召回、Chroma 向量召回与 RRF 排序。
-- **回答可溯源**：API 同时返回事件级引用、召回结果、匹配通道、trace ID 与耗时。
-- **事实边界明确**：显式年份无结果或证据不足时拒答，禁止模型脱离本地资料自由补全。
-- **可离线复现**：默认哈希字符 n-gram Embedding，无需下载模型或申请 API Key；可切换 Qwen Embedding。
-- **工程化交付**：FastAPI、Gradio、Pytest、离线评测门禁、结构化日志、Docker 和 GitHub Actions。
+ModelScope Docker 创空间与 Hugging Face Docker Space 的部署配置已经就绪，但公开 URL 尚未发布。只有以下发布门禁全部通过后才会在这里填写真实地址：
+
+- 100 个事件完成签名审核，20 个重点事件完成双来源核对；
+- 80 条独立人工问题全部由人工撰写并签名；
+- 人工集指标达到门禁，在线冒烟与五路并发测试通过。
+
+当前仓库不会用目标值或空白人工集冒充实测结果。
+
+## 核心能力
+
+- 年份、事件名和人物精确匹配，SQLite FTS5/LIKE 全文召回，Chroma 向量召回，RRF 融合排序。
+- 返回事件级引用及真实来源元数据：标题、发布机构、URL、权威等级与支持字段。
+- 无检索证据时明确拒答；密钥缺失、模型超时、供应商限流、并发上限或每日预算耗尽时自动降级。
+- FastAPI 与 Gradio 在同一进程、同一索引上运行：根路径是 UI，`/api/v1/qa` 是接口，`/docs` 是 OpenAPI。
+- 公网模式默认每 IP 每分钟 30 个总请求、6 个模型调用，最多 2 个并发模型调用，每日 50,000 Token。
+- 日志只记录加盐哈希后的客户端标识，不保存原始 IP。
 
 ## 系统架构
 
 ```mermaid
 flowchart LR
-    U["用户 / Gradio"] --> API["FastAPI /api/v1/qa"]
-    API --> P["查询解析：年份、事件、人物、意图"]
-    P --> E["精确过滤"]
-    P --> F["SQLite FTS5 / LIKE"]
+    U["浏览器 / API 客户端"] --> F["FastAPI + Gradio / 7860"]
+    F --> G["总请求限流 + 客户端哈希"]
+    G --> P["查询解析：年份、事件、人物、意图"]
+    P --> E["精确匹配"]
+    P --> S["SQLite FTS5 / LIKE"]
     P --> V["Chroma 向量召回"]
-    E --> R["RRF 融合与置信度门控"]
-    F --> R
+    E --> R["RRF 融合与置信门控"]
+    S --> R
     V --> R
-    R --> C["事件证据与引用"]
-    C --> Q["Qwen 受约束生成"]
-    C --> L["本地模板降级"]
-    Q --> O["答案 + citations + trace"]
+    R --> C["事件证据 + 字段来源"]
+    C --> B["并发 / 频率 / Token 预算"]
+    B --> Q["Qwen 受约束生成"]
+    B --> L["本地模板降级"]
+    Q --> O["答案 + 引用 + trace + 降级原因"]
     L --> O
 ```
 
 详细设计见 [docs/architecture.md](docs/architecture.md)。
 
-## 离线评测结果
+## 实测结果
 
-执行环境为本机离线哈希向量模式，关闭 Qwen；评测集由 100 条事件数据生成并额外加入语义、比较、追问和 10 条无答案问题。
+自动回归集由项目事件字段派生，只用于防回归，不代表开放域能力。2026-07-22 在本机、关闭 Qwen、使用离线哈希向量的结果：
 
-| 指标 | 原规则/LIKE 基线 | 混合检索 |
+| 指标 | 规则/LIKE 基线 | 混合检索 |
 | --- | ---: | ---: |
+| 样本数 | 321 | 321 |
 | Hit@5 | 99.68% | **100%** |
 | MRR@5 | 98.95% | **99.84%** |
-| 无答案拒答准确率 | 90% | **100%** |
 | 精确年份/名称 Recall@1 | — | **100%** |
+| 无答案拒答准确率 | 90% | **100%** |
 | 引用覆盖率 | — | **100%** |
-| 关键事实支持率（规则检查） | — | **100%** |
-| 本地检索 P95 | — | **7.13 ms** |
+| 规则关键事实支持率 | — | **100%** |
+| 本地检索 P95 | — | **7.824 ms** |
 
-完整结果见 [evaluation/REPORT.md](evaluation/REPORT.md)。这些是 321 条闭集自动评测结果；“关键事实支持率”只检查标注事实是否出现在答案中，不等同于外部专家事实审核。
+完整结果见 [evaluation/REPORT.md](evaluation/REPORT.md)。独立人工集当前为 `80 draft / 0 completed`，所以没有人工指标；完成后结果写入 `evaluation/HUMAN_REPORT.md`。
 
-## 快速开始
+## 快速启动
 
 要求 Python 3.11–3.13。
 
@@ -70,120 +94,133 @@ python -m venv .venv
 # macOS/Linux: source .venv/bin/activate
 pip install -e ".[dev]"
 
+python -m scripts.check_evidence
 python -m scripts.init_database
 python -m scripts.build_index --provider hash
+python -m scripts.serve
 ```
 
-启动 API：
+访问：
 
-```bash
-uvicorn app.api:app --host 0.0.0.0 --port 8000
-```
+- UI：`http://127.0.0.1:7860/`
+- OpenAPI：`http://127.0.0.1:7860/docs`
+- 健康检查：`http://127.0.0.1:7860/healthz`
+- 部署就绪检查：`http://127.0.0.1:7860/readyz`
+- 版本与证据统计：`http://127.0.0.1:7860/api/v1/meta`
 
-- OpenAPI：`http://127.0.0.1:8000/docs`
-- 健康检查：`http://127.0.0.1:8000/healthz`。`ok`/`degraded` 返回 HTTP 200；数据库不可用的 `unhealthy` 返回 HTTP 503。
-
-启动 Gradio：
-
-```bash
-python app.py
-```
-
-访问 `http://127.0.0.1:7860`。
+`/healthz` 的 `ok/degraded` 返回 200，数据库不可用返回 503；`/readyz` 只在数据库和向量索引均可用时返回 200，Qwen 是否配置不影响部署就绪状态。
 
 ## API 示例
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/v1/qa \
+curl -X POST http://127.0.0.1:7860/api/v1/qa \
   -H "Content-Type: application/json" \
   -d '{"question":"五四运动有什么影响？","history":[]}'
 ```
 
-响应中的关键字段：
+关键响应字段：
 
 ```json
 {
   "answer": "... [E1]",
-  "citations": [{"ref": "E1", "name": "五四运动", "year": 1919}],
-  "retrieved_events": [{"name": "五四运动", "matched_by": ["exact_name"]}],
+  "citations": [
+    {
+      "ref": "E1",
+      "name": "五四运动",
+      "source_title": "兼容字段",
+      "source_url": "兼容字段",
+      "sources": [
+        {
+          "title": "五四运动简介",
+          "publisher": "中华英烈网（共产党员网供稿）",
+          "url": "https://...",
+          "authority_level": "A",
+          "supported_fields": ["summary", "detail", "influence", "exam_points"]
+        }
+      ]
+    }
+  ],
   "retrieval_mode": "exact_name",
-  "trace_id": "...",
-  "latency_ms": 1.23,
   "degraded": true,
-  "refused": false
+  "degraded_reason": "api_key_missing",
+  "refused": false,
+  "trace_id": "..."
 }
 ```
 
-## 使用 Qwen
+## Qwen 与公网保护
 
-复制 `.env.example` 为 `.env`，填入自己的 DashScope Key：
+复制 `.env.example` 为 `.env`，只在本地或部署平台的 Secret 中填写 Key：
 
 ```dotenv
 DASHSCOPE_API_KEY=your-key
 USE_LLM=true
-QWEN_MODEL=qwen-plus
+PUBLIC_DEMO_MODE=true
+CLIENT_HASH_SALT=replace-with-a-random-secret
 ```
 
-默认仍使用离线 Embedding。若希望使用 Qwen Embedding：
-
-```dotenv
-EMBEDDING_PROVIDER=qwen
-```
-
-然后重新构建对应索引：
-
-```bash
-python -m scripts.build_index --provider qwen
-```
-
-API Key 只从环境变量读取；不要写入代码、JSONL 或 Git 提交历史。
+Key 不得写入代码、JSONL、Docker 镜像或 Git 历史。公网保护默认值都可通过 `.env.example` 中的变量覆盖。
 
 ## 测试与评测
 
 ```bash
-python -m pytest -q
-python -m scripts.run_evaluation --enforce
 python -m scripts.check_secrets
+python -m scripts.check_evidence
+python -m scripts.validate_human_questions
+python -m pytest -q
+python -m scripts.run_evaluation --suite regression --enforce
 ```
 
-`--enforce` 会检查 Hit@5、MRR、精确召回、引用、拒答和 P95 延迟是否达到项目验收阈值。
+人工集完成后执行：
+
+```bash
+python -m scripts.validate_human_questions --require-final
+python -m scripts.run_evaluation --suite human --enforce
+python -m scripts.run_evaluation --suite all --enforce
+```
+
+独立人工问题的填写规范见 [evaluation/HUMAN_AUTHORING.md](evaluation/HUMAN_AUTHORING.md)。普通 CI 接受空白草稿槽位；部署与正式 Release 工作流强制要求全部人工题目和证据审核完成。
 
 ## Docker
 
 ```bash
 docker build -t shijian-rag .
-docker run --rm -p 8000:8000 shijian-rag
+docker run --rm -p 7860:7860 -e PORT=7860 shijian-rag
 ```
 
-容器默认关闭大模型，使用可复现的本地索引，并以固定 UID `10001` 的非 root 用户运行。使用 Qwen 时通过运行参数传入环境变量，切勿把密钥写入镜像。
+镜像在构建阶段生成 SQLite 与 Chroma，不依赖持久磁盘；进程使用固定 UID 1000 的非 root 用户，只向 `storage` 运行目录写入。平台可注入其他 `PORT`。
 
-## 数据与索引
+## ModelScope / Hugging Face 部署
 
-- `data/history_events.jsonl` 是可审查数据源，每个事件使用稳定哈希 ID。
-- `python -m scripts.init_database` 使用 UPSERT 同步 SQLite，并重建 FTS5 索引。
-- `python -m scripts.build_index` 根据内容哈希增量同步 Chroma，不调用私有 Chroma API。
-- `storage/`、旧 SQLite 文件和 Chroma 二进制索引均被 `.gitignore` 排除。
+首选 [ModelScope Docker 创空间](https://www.modelscope.cn/docs/studios/docker)，固定公开端口 7860，在运行时环境变量中配置 `DASHSCOPE_API_KEY`、`USE_LLM=true`、`PUBLIC_DEMO_MODE=true`、`RUNTIME_DIR=/mnt/workspace/shijian-rag`。ModelScope 创建与部署需要账户登录及平台要求的实名认证。
 
-## 项目结构
+若 ModelScope 不可用，工作流回退到 [Hugging Face Docker Space](https://huggingface.co/docs/hub/main/spaces-sdks-docker)。两个平台都只在运行时注入 Secret。
 
-```text
-app/          配置、数据库、查询解析、混合检索、生成、服务和 API
-ui/           Gradio 演示界面
-data/         可审查 JSONL 数据源
-scripts/      初始化、索引、评测和安全检查工具
-tests/        单元测试与 API 集成测试
-evaluation/   321 条评测集、指标和失败案例
-docs/         架构、面试与简历材料
-```
+GitHub Actions 部署变量：
+
+- ModelScope：Secret `MODELSCOPE_TOKEN`；Variables `MODELSCOPE_STUDIO_PATH`、`MODELSCOPE_DEMO_URL`。
+- Hugging Face：Secret `HF_TOKEN`；Variables `HF_SPACE_ID`、`HF_DEMO_URL`。
+
+部署后运行 `python -m scripts.smoke_deployment <URL> --full-load`，检查 `/readyz`、精确查询、来源 URL、拒答、20 次问答和五路并发。
+
+## 数据、来源与审核
+
+- `data/history_events.jsonl`：100 个稳定事件 ID。
+- `data/sources.jsonl`：来源标题、发布机构、URL、类型、等级、访问日期和版权说明。
+- `data/event_evidence.jsonl`：事件与来源、字段证据、审核人、审核日期和状态。
+- `scripts/build_evidence_candidates.py`：只生成候选映射，不授予“已审核”状态。
+- `scripts/check_source_links.py`：每周检查链接；2xx/3xx 通过，403/429 标为人工复核。
+
+只提交引用元数据和必要短摘要，不复制受版权保护的教材或史料全文。正式发布门禁要求 100 个事件均有签名 `verified` 状态。
 
 ## 已知局限
 
-- 当前数据规模仅 100 个事件，最大年份为 2001 年，覆盖面不足以支持开放域历史问答。
-- 项目内置事件资料未逐条链接到外部权威史料；引用表示“回答依据了哪条项目资料”，不代表学术引用。
-- 离线哈希 Embedding 主要保证可复现，不具备通用语义模型的表示能力。
-- 自动评测大部分由同一数据源派生，指标适合回归测试，不应当宣传为开放域准确率。
-- 上线公共 Demo 时仍需增加限流、鉴权、内容安全和外部监控。
+- 100 条事件不能覆盖开放域历史问题，最大事件年份为 2001。
+- 当前来源映射为待人工核对的候选数据，`verified_event_count` 为 0；不能宣传为完成权威史料审核。
+- 80 条人工问题尚未填写，因此只能引用 321 条闭集自动回归结果。
+- 离线哈希 Embedding 强调可复现，不等同于通用语义模型。
+- 单机内存限流适合演示，不适合多副本生产部署；多副本应改用集中式 Redis 限流和预算账本。
 
-## 开源协议
+## License
 
-代码使用 [MIT License](LICENSE)。公开数据前应确认整理内容拥有再分发权；若未来接入第三方数据集，应分别遵守其许可证。
+代码使用 [MIT License](LICENSE)。公开数据为项目作者确认可再分发的教学整理内容；第三方来源只保存元数据与链接，各来源内容仍受其原许可和版权约束。

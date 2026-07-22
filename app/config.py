@@ -38,6 +38,15 @@ class Settings:
     vector_max_distance: float = 0.65
     retrieval_limit: int = 5
     log_level: str = "INFO"
+    public_demo_mode: bool = False
+    demo_llm_requests_per_minute: int = 6
+    demo_hard_requests_per_minute: int = 30
+    demo_max_llm_concurrency: int = 2
+    demo_daily_token_budget: int = 50_000
+    llm_timeout_seconds: float = 15.0
+    llm_max_tokens: int = 500
+    runtime_dir: Path = ROOT_DIR / "storage" / "runtime"
+    client_hash_salt: str = "shijian-rag-public-demo"
 
     @classmethod
     def from_env(cls, **overrides: object) -> "Settings":
@@ -67,6 +76,28 @@ class Settings:
             "vector_max_distance": float(os.getenv("VECTOR_MAX_DISTANCE", "0.65")),
             "retrieval_limit": int(os.getenv("RETRIEVAL_LIMIT", "5")),
             "log_level": os.getenv("LOG_LEVEL", "INFO").upper(),
+            "public_demo_mode": _as_bool(os.getenv("PUBLIC_DEMO_MODE"), False),
+            "demo_llm_requests_per_minute": int(
+                os.getenv("DEMO_LLM_REQUESTS_PER_MINUTE", "6")
+            ),
+            "demo_hard_requests_per_minute": int(
+                os.getenv("DEMO_HARD_REQUESTS_PER_MINUTE", "30")
+            ),
+            "demo_max_llm_concurrency": int(os.getenv("DEMO_MAX_LLM_CONCURRENCY", "2")),
+            "demo_daily_token_budget": int(os.getenv("DEMO_DAILY_TOKEN_BUDGET", "50000")),
+            "llm_timeout_seconds": float(os.getenv("LLM_TIMEOUT_SECONDS", "15")),
+            "llm_max_tokens": int(os.getenv("LLM_MAX_TOKENS", "500")),
+            "runtime_dir": Path(
+                str(
+                    overrides.pop(
+                        "runtime_dir",
+                        os.getenv("RUNTIME_DIR", storage / "runtime"),
+                    )
+                )
+            ).resolve(),
+            "client_hash_salt": os.getenv(
+                "CLIENT_HASH_SALT", "shijian-rag-public-demo"
+            ),
         }
         values.update(overrides)
         return cls(**values)
